@@ -2,7 +2,7 @@
 # Job portal microservices platform — rehabilitation project
 # Location: E:\Projects\inherited\SkillFind
 # Repo: https://github.com/okalangkenneth/SkillFind
-# Build state last updated: 2026-04-02 (Phase 0 discovery complete)
+# Build state last updated: 2026-04-06 (Phase 1 complete — all services build clean)
 
 ---
 
@@ -67,15 +67,15 @@ Cross-cutting concerns:
 ### Services
 | Service | Builds? | DB? | Dockerfile? | k8s manifest? | Notes |
 |---------|---------|-----|-------------|---------------|-------|
-| JobSeeker.API | NOT CREATED | - | NO | NO | Entire service missing — must be built from scratch |
-| JobPosting.API | WARNINGS | SQL Server migrations exist | NO | NO | net5.0 EOL; AutoMapper vuln; SqlServer (need Postgres) |
-| JobPosting.Application | WARNINGS | - | NO | NO | net5.0 EOL; AutoMapper 12.0.1 HIGH vuln |
-| JobPosting.Domain | WARNINGS | - | NO | NO | net5.0 EOL |
-| JobPosting.Infrastructure | WARNINGS | - | NO | NO | net5.0 EOL; EF SqlServer (need Npgsql) |
-| JobCategory.API | NOT CREATED | - | NO | NO | Entire service missing — must be built from scratch |
-| Notification.Service | NOT CREATED | - | NO | NO | Entire service missing — must be built from scratch |
-| ApiGateway | NOT CREATED | - | NO | NO | Entire service missing — must be built from scratch |
-| Search.Service | NOT CREATED | - | NO | NO | Entire service missing — must be built from scratch |
+| JobSeeker.API | CLEAN | Npgsql+OpenIddict | NO | NO | Scaffolded Phase 1B; OpenIddict auth |
+| JobPosting.API | CLEAN | Npgsql migrations | NO | NO | Fixed Phase 1A: net8, Mapster, Serilog, MediatR v12 |
+| JobPosting.Application | CLEAN | - | NO | NO | Fixed Phase 1A |
+| JobPosting.Domain | CLEAN | - | NO | NO | Fixed Phase 1A |
+| JobPosting.Infrastructure | CLEAN | - | NO | NO | Fixed Phase 1A: EF Npgsql |
+| JobCategory.API | CLEAN | Npgsql | NO | NO | Scaffolded Phase 1B; full CRUD DDD |
+| Notification.Service | CLEAN | - | NO | NO | Scaffolded Phase 1B; RabbitMQ+MassTransit consumer |
+| ApiGateway | CLEAN | - | NO | NO | Scaffolded Phase 1B; Ocelot reverse proxy |
+| Search.Service | CLEAN | - | NO | NO | Scaffolded Phase 1B; NEST 7.17 + MassTransit indexer |
 
 **dotnet build result (2026-04-02):** `Build succeeded. 4 Warning(s), 0 Error(s)`
 SDK on machine: .NET 9.0.201 (but projects target net5.0)
@@ -454,9 +454,12 @@ kubectl get pods -n skillfind -w
 
 ## COMPLETED PHASES
 - [x] Phase 0 — Discovery & Triage (2026-04-02)
+- [x] Phase 1 — Make Everything Build Clean (2026-04-06)
+  - Phase 1A: Upgraded JobPosting to net8, Mapster, Npgsql, Serilog, MediatR v12
+  - Phase 1B: Scaffolded JobCategory, JobSeeker (OpenIddict), Notification, ApiGateway, Search
+  - Full solution builds: 0 errors, 0 warnings (13 projects)
 
 ## REMAINING PHASES
-- [ ] Phase 1 — Make Everything Build Clean
 - [ ] Phase 2 — Dockerize All Services
 - [ ] Phase 3 — Wire Services Together
 - [ ] Phase 4 — Kubernetes Manifests

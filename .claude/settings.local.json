@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)",
+      "Bash(xargs grep:*)",
+      "Bash(while read:*)",
+      "Bash(do echo:*)",
+      "Read(//e/Projects/inherited/SkillFind/**)",
+      "Bash(done)",
+      "Bash(for f:*)",
+      "Bash(do)",
+      "Bash(echo \"=== $f ===\")"
+    ]
+  }
+}
