@@ -2,7 +2,7 @@
 # Job portal microservices platform — rehabilitation project
 # Location: E:\Projects\inherited\SkillFind
 # Repo: https://github.com/okalangkenneth/SkillFind
-# Build state last updated: 2026-04-06 (Phase 1 complete — all services build clean)
+# Build state last updated: 2026-04-07 (Phase 2 complete — all services Dockerized, docker-compose ready)
 
 ---
 
@@ -67,15 +67,15 @@ Cross-cutting concerns:
 ### Services
 | Service | Builds? | DB? | Dockerfile? | k8s manifest? | Notes |
 |---------|---------|-----|-------------|---------------|-------|
-| JobSeeker.API | CLEAN | Npgsql+OpenIddict | NO | NO | Scaffolded Phase 1B; OpenIddict auth |
-| JobPosting.API | CLEAN | Npgsql migrations | NO | NO | Fixed Phase 1A: net8, Mapster, Serilog, MediatR v12 |
-| JobPosting.Application | CLEAN | - | NO | NO | Fixed Phase 1A |
-| JobPosting.Domain | CLEAN | - | NO | NO | Fixed Phase 1A |
-| JobPosting.Infrastructure | CLEAN | - | NO | NO | Fixed Phase 1A: EF Npgsql |
-| JobCategory.API | CLEAN | Npgsql | NO | NO | Scaffolded Phase 1B; full CRUD DDD |
-| Notification.Service | CLEAN | - | NO | NO | Scaffolded Phase 1B; RabbitMQ+MassTransit consumer |
-| ApiGateway | CLEAN | - | NO | NO | Scaffolded Phase 1B; Ocelot reverse proxy |
-| Search.Service | CLEAN | - | NO | NO | Scaffolded Phase 1B; NEST 7.17 + MassTransit indexer |
+| JobSeeker.API | CLEAN | Npgsql+OpenIddict | YES | NO | Phase 2: Dockerfile added; InitialCreate migration |
+| JobPosting.API | CLEAN | Npgsql migrations | YES | NO | Phase 2: Dockerfile added; InitialCreate migration |
+| JobPosting.Application | CLEAN | - | - | NO | Fixed Phase 1A |
+| JobPosting.Domain | CLEAN | - | - | NO | Fixed Phase 1A |
+| JobPosting.Infrastructure | CLEAN | - | - | NO | Phase 2: Design-time factory added |
+| JobCategory.API | CLEAN | Npgsql | YES | NO | Phase 2: Dockerfile added; InitialCreate migration |
+| Notification.Service | CLEAN | - | YES | NO | Phase 2: Dockerfile added |
+| ApiGateway | CLEAN | - | YES | NO | Phase 2: Dockerfile added; ocelot.json publish fix |
+| Search.Service | CLEAN | - | YES | NO | Phase 2: Dockerfile added |
 
 **dotnet build result (2026-04-02):** `Build succeeded. 4 Warning(s), 0 Error(s)`
 SDK on machine: .NET 9.0.201 (but projects target net5.0)
@@ -83,10 +83,10 @@ SDK on machine: .NET 9.0.201 (but projects target net5.0)
 ### Infrastructure
 | Component | Status |
 |-----------|--------|
-| PostgreSQL | NOT ADDED |
-| RabbitMQ | NOT ADDED |
-| Elasticsearch 7.17 | NOT ADDED |
-| Kibana 7.17 | NOT ADDED |
+| PostgreSQL | docker-compose — postgres:16-alpine, port 5432, 3 databases |
+| RabbitMQ | docker-compose — rabbitmq:3.13-management-alpine, ports 5672/15672 |
+| Elasticsearch 7.17 | docker-compose — elasticsearch:7.17.21, port 9200 |
+| Kibana 7.17 | docker-compose — kibana:7.17.21, port 5601 |
 | Redis (session cache) | NOT ADDED |
 | NGINX Ingress | NOT ADDED |
 
@@ -458,9 +458,18 @@ kubectl get pods -n skillfind -w
   - Phase 1A: Upgraded JobPosting to net8, Mapster, Npgsql, Serilog, MediatR v12
   - Phase 1B: Scaffolded JobCategory, JobSeeker (OpenIddict), Notification, ApiGateway, Search
   - Full solution builds: 0 errors, 0 warnings (13 projects)
+- [x] Phase 2 — Dockerize All Services (2026-04-07)
+  - 6 multi-stage Dockerfiles (sdk:8.0 → aspnet:8.0)
+  - docker-compose.yml: postgres, rabbitmq, elasticsearch, kibana + all 6 app services
+  - infrastructure/postgres/init.sql: creates skillfind_jobcategory + skillfind_jobseeker DBs
+  - EF InitialCreate migrations for JobPosting, JobCategory, JobSeeker
+  - Design-time DbContext factories for all 3 DB services
+  - Serilog config section added to all 6 appsettings.json files
+  - ApiGateway.csproj: ocelot.json marked as publish content
+  - Next step: `docker-compose up -d --build`, then apply migrations with `dotnet ef database update`
 
 ## REMAINING PHASES
-- [ ] Phase 2 — Dockerize All Services
+- [ ] Phase 3 — Wire Services Together
 - [ ] Phase 3 — Wire Services Together
 - [ ] Phase 4 — Kubernetes Manifests
 - [ ] Phase 5 — GitHub Actions CI/CD
