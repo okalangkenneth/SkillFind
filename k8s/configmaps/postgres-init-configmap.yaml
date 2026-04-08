@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: skillfind
+data:
+  init.sql: |
+    CREATE DATABASE skillfind_jobcategory;
+    CREATE DATABASE skillfind_jobseeker;
+    GRANT ALL PRIVILEGES ON DATABASE skillfind_jobposting TO skillfind_user;
+    GRANT ALL PRIVILEGES ON DATABASE skillfind_jobcategory TO skillfind_user;
+    GRANT ALL PRIVILEGES ON DATABASE skillfind_jobseeker TO skillfind_user;

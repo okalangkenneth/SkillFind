@@ -1,0 +1,48 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: skillfind-ingress
+  namespace: skillfind
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /api/v1/jobposting(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: jobposting-api
+            port:
+              number: 80
+      - path: /api/categories(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: jobcategory-api
+            port:
+              number: 80
+      - path: /api/jobseekers(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: jobseeker-api
+            port:
+              number: 80
+      - path: /api/search(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: search-service
+            port:
+              number: 80
+      - path: /(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: apigateway
+            port:
+              number: 80

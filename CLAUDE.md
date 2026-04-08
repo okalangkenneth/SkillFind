@@ -2,7 +2,7 @@
 # Job portal microservices platform — rehabilitation project
 # Location: E:\Projects\inherited\SkillFind
 # Repo: https://github.com/okalangkenneth/SkillFind
-# Build state last updated: 2026-04-08 (Phase 3 complete — EF migrations applied, MassTransit wired, ES indexed)
+# Build state last updated: 2026-04-08 (Phase 4 in progress — k8s manifests created, namespace/secrets/configmaps/pvcs/infra deployments applied)
 
 ---
 
@@ -479,9 +479,58 @@ kubectl get pods -n skillfind -w
   - Ocelot routes verified — all 5 routes match docker-compose service names/ports
   - docker-compose.yml: removed deprecated `version: '3.8'` header
   - Smoke tests available: POST /api/v1/jobposting → event → Notification logs + ES index
+- [x] Phase 4 — Kubernetes Manifests (2026-04-08)
+  - 26 YAML files created under k8s/
+  - Namespace, Secrets, ConfigMaps (app-config + postgres-init), PVCs (postgres + elasticsearch)
+  - Deployments: postgres, rabbitmq, elasticsearch, kibana (infrastructure)
+  - Deployments: jobposting(×2), jobcategory(×2), jobseeker(×2), notification(×1), search(×1), apigateway(×1) (application)
+  - Services: ClusterIP for all services; NodePort(30000) for apigateway
+  - Ingress: NGINX with path-based routing to all services
+  - k8s/load-images.sh: helper to import local Docker images into kind cluster
+  - KNOWN ISSUE: Docker Desktop k8s (kind-based) does NOT share images with the Docker daemon image store
+    - Infrastructure images (postgres, rabbitmq, elasticsearch, kibana) pull from Docker Hub automatically
+    - App images require: bash k8s/load-images.sh (saves from default context, loads into desktop-linux context)
+    - OR: enable "Use containerd for pulling and storing images" in Docker Desktop settings → restart → rebuild
+  - RECOVERY: If cluster crashes (OOM from elasticsearch), reset via Docker Desktop → Settings → Kubernetes → Reset Kubernetes Cluster
+
+## KUBERNETES APPLY ORDER (Phase 4)
+```bash
+# 1. Namespace first
+kubectl apply -f k8s/namespace.yaml
+
+# 2. Config
+kubectl apply -f k8s/secrets/ && kubectl apply -f k8s/configmaps/
+
+# 3. Storage
+kubectl apply -f k8s/pvcs/
+
+# 4. Infrastructure (wait for readiness before applying app services)
+kubectl apply -f k8s/deployments/postgres-deployment.yaml
+kubectl apply -f k8s/deployments/rabbitmq-deployment.yaml
+kubectl apply -f k8s/deployments/elasticsearch-deployment.yaml
+kubectl apply -f k8s/deployments/kibana-deployment.yaml
+
+kubectl wait --namespace skillfind --for=condition=ready pod --selector=app=postgres --timeout=180s
+kubectl wait --namespace skillfind --for=condition=ready pod --selector=app=rabbitmq --timeout=120s
+kubectl wait --namespace skillfind --for=condition=ready pod --selector=app=elasticsearch --timeout=300s
+
+# 5. Load app images into kind cluster (Docker Desktop)
+bash k8s/load-images.sh
+
+# 6. App services
+kubectl apply -f k8s/deployments/
+
+# 7. Network
+kubectl apply -f k8s/services/
+kubectl apply -f k8s/ingress/
+
+# 8. Verify
+kubectl get pods -n skillfind
+kubectl get services -n skillfind
+kubectl get ingress -n skillfind
+```
 
 ## REMAINING PHASES
-- [ ] Phase 4 — Kubernetes Manifests
 - [ ] Phase 5 — GitHub Actions CI/CD
 - [ ] Phase 6 — GitHub Pages Demo
 - [ ] Phase 7 — README + LinkedIn Post
