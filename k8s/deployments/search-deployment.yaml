@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: search-service
-        image: skillfind-search-service:latest
-        imagePullPolicy: Never
+        image: localhost:5555/skillfind-search-service:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
         envFrom:

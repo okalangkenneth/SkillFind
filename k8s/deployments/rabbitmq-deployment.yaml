@@ -38,7 +38,7 @@ spec:
             memory: "512Mi"
             cpu: "500m"
         readinessProbe:
-          exec:
-            command: ["rabbitmq-diagnostics", "ping"]
-          initialDelaySeconds: 20
+          tcpSocket:
+            port: 5672
+          initialDelaySeconds: 30
           periodSeconds: 10

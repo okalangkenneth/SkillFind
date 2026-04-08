@@ -2,7 +2,7 @@
 # Job portal microservices platform — rehabilitation project
 # Location: E:\Projects\inherited\SkillFind
 # Repo: https://github.com/okalangkenneth/SkillFind
-# Build state last updated: 2026-04-08 (Phase 4 in progress — k8s manifests created, namespace/secrets/configmaps/pvcs/infra deployments applied)
+# Build state last updated: 2026-04-08 (Phase 4 COMPLETE — all pods Running via local registry localhost:5555)
 
 ---
 
@@ -486,12 +486,14 @@ kubectl get pods -n skillfind -w
   - Deployments: jobposting(×2), jobcategory(×2), jobseeker(×2), notification(×1), search(×1), apigateway(×1) (application)
   - Services: ClusterIP for all services; NodePort(30000) for apigateway
   - Ingress: NGINX with path-based routing to all services
-  - k8s/load-images.sh: helper to import local Docker images into kind cluster
-  - KNOWN ISSUE: Docker Desktop k8s (kind-based) does NOT share images with the Docker daemon image store
-    - Infrastructure images (postgres, rabbitmq, elasticsearch, kibana) pull from Docker Hub automatically
-    - App images require: bash k8s/load-images.sh (saves from default context, loads into desktop-linux context)
-    - OR: enable "Use containerd for pulling and storing images" in Docker Desktop settings → restart → rebuild
+  - k8s/load-images.sh: helper to import local Docker images into kind cluster (superseded by local registry)
+  - IMAGE PULL SOLUTION (2026-04-08): Local registry on localhost:5555 (registry:2 container)
+    - Start registry: docker run -d -p 5555:5000 --name registry registry:2
+    - Tag + push: docker tag <name>:latest localhost:5555/<name>:latest && docker --context default push localhost:5555/<name>:latest
+    - All 6 deployment YAMLs updated: image: localhost:5555/skillfind-<name>:latest, imagePullPolicy: IfNotPresent
+    - Use `docker --context default push` if desktop-linux context gives 500 errors
   - RECOVERY: If cluster crashes (OOM from elasticsearch), reset via Docker Desktop → Settings → Kubernetes → Reset Kubernetes Cluster
+  - All 10 pods verified Running (infra × 4 + app × 6)
 
 ## KUBERNETES APPLY ORDER (Phase 4)
 ```bash

@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: apigateway
-        image: skillfind-apigateway:latest
-        imagePullPolicy: Never
+        image: localhost:5555/skillfind-apigateway:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
         envFrom:
@@ -30,15 +30,13 @@ spec:
             memory: "256Mi"
             cpu: "300m"
         livenessProbe:
-          httpGet:
-            path: /healthz
+          tcpSocket:
             port: 8080
           initialDelaySeconds: 20
           periodSeconds: 30
           failureThreshold: 3
         readinessProbe:
-          httpGet:
-            path: /healthz
+          tcpSocket:
             port: 8080
           initialDelaySeconds: 15
           periodSeconds: 10

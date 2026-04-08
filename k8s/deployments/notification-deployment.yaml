@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: notification-service
-        image: skillfind-notification-service:latest
-        imagePullPolicy: Never
+        image: localhost:5555/skillfind-notification-service:latest
+        imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
             name: app-config

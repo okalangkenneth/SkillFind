@@ -4,7 +4,7 @@ metadata:
   name: jobposting-api
   namespace: skillfind
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: jobposting-api
@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: jobposting-api
-        image: skillfind-jobposting-api:latest
-        imagePullPolicy: Never
+        image: localhost:5555/skillfind-jobposting-api:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
         envFrom:
