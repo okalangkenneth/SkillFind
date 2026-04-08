@@ -12,6 +12,7 @@ namespace JobPosting.Domain.Entities
         
         public string Title { get; set; }
         public string JobDescription { get; set; }
+        public string CompanyName { get; set; }
         public DateTime PostDate { get; set; }
         public DateTime ExpiryDate { get; set; }
         public string JobLocation { get; set; }

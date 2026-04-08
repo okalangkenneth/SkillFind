@@ -3,8 +3,10 @@ using JobPosting.Application.Contracts.Persistence;
 using JobPosting.Application.Models;
 using JobPosting.Domain.Entities;
 using Mapster;
+using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Notification.Domain.Events;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,12 +17,18 @@ namespace JobPosting.Application.Features.JobPostings.Commands.CreateJobPosting
     {
         private readonly IJobPostingRepository _jobPostingRepository;
         private readonly IEmailService _emailService;
+        private readonly IPublishEndpoint _publishEndpoint;
         private readonly ILogger<CreateJobPostingCommandHandler> _logger;
 
-        public CreateJobPostingCommandHandler(IJobPostingRepository jobPostingRepository, IEmailService emailService, ILogger<CreateJobPostingCommandHandler> logger)
+        public CreateJobPostingCommandHandler(
+            IJobPostingRepository jobPostingRepository,
+            IEmailService emailService,
+            IPublishEndpoint publishEndpoint,
+            ILogger<CreateJobPostingCommandHandler> logger)
         {
             _jobPostingRepository = jobPostingRepository;
             _emailService = emailService;
+            _publishEndpoint = publishEndpoint;
             _logger = logger;
         }
 
@@ -30,6 +38,15 @@ namespace JobPosting.Application.Features.JobPostings.Commands.CreateJobPosting
             var newJobPosting = await _jobPostingRepository.AddAsync(jobPostingEntity);
 
             _logger.LogInformation("Job Posting {Id} successfully created.", newJobPosting.Id);
+
+            await _publishEndpoint.Publish(new JobPostCreatedEvent
+            {
+                JobPostId = Guid.NewGuid(),
+                Title = newJobPosting.Title,
+                CompanyName = newJobPosting.CompanyName,
+                CategoryName = newJobPosting.JobCategory ?? string.Empty,
+                PostedAt = DateTime.UtcNow
+            }, cancellationToken);
 
             await SendMail(newJobPosting);
 

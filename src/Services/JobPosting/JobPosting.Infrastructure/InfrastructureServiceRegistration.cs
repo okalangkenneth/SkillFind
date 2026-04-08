@@ -14,6 +14,8 @@ namespace JobPosting.Infrastructure
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
+            System.AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
             services.AddDbContext<JobPostingContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 

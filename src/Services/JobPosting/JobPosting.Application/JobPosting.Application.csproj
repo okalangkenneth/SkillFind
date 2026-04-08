@@ -6,10 +6,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\JobPosting.Domain\JobPosting.Domain.csproj" />
+    <ProjectReference Include="..\..\Notification\Notification.Domain\Notification.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="11.5.1" />
+    <PackageReference Include="MassTransit" Version="8.3.6" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.5.1" />
     <PackageReference Include="Mapster" Version="7.4.0" />
     <PackageReference Include="Mapster.DependencyInjection" Version="1.0.1" />

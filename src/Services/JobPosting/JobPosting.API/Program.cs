@@ -1,5 +1,6 @@
 using JobPosting.Application;
 using JobPosting.Infrastructure;
+using MassTransit;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Events;
@@ -34,6 +35,20 @@ try
 
     builder.Services.AddApplicationServices();
     builder.Services.AddInfrastructureServices(builder.Configuration);
+
+    builder.Services.AddMassTransit(x =>
+    {
+        x.UsingRabbitMq((ctx, cfg) =>
+        {
+            cfg.Host(builder.Configuration["RabbitMQ:Host"] ?? "localhost", "/", h =>
+            {
+                h.Username(builder.Configuration["RabbitMQ:Username"] ?? "guest");
+                h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
+            });
+            cfg.ConfigureEndpoints(ctx);
+        });
+    });
+
     builder.Services.AddControllers();
     builder.Services.AddHealthChecks()
         .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!);

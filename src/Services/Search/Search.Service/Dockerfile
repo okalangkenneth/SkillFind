@@ -1,19 +1,23 @@
+# syntax=docker/dockerfile:1
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
+COPY NuGet.Config .
 COPY src/Services/Search/Search.Domain/Search.Domain.csproj \
      src/Services/Search/Search.Domain/
 COPY src/Services/Search/Search.Service/Search.Service.csproj \
      src/Services/Search/Search.Service/
 COPY src/Services/Notification/Notification.Domain/Notification.Domain.csproj \
      src/Services/Notification/Notification.Domain/
-RUN dotnet restore src/Services/Search/Search.Service/Search.Service.csproj
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
+    dotnet restore src/Services/Search/Search.Service/Search.Service.csproj
 
 COPY src/Services/Search/ src/Services/Search/
 COPY src/Services/Notification/Notification.Domain/ src/Services/Notification/Notification.Domain/
-RUN dotnet publish src/Services/Search/Search.Service/Search.Service.csproj \
-    -c Release -o /app/publish --no-restore
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
+    dotnet publish src/Services/Search/Search.Service/Search.Service.csproj \
+    -c Release -o /app/publish
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime

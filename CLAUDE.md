@@ -2,7 +2,7 @@
 # Job portal microservices platform — rehabilitation project
 # Location: E:\Projects\inherited\SkillFind
 # Repo: https://github.com/okalangkenneth/SkillFind
-# Build state last updated: 2026-04-07 (Phase 2 complete — all services Dockerized, docker-compose ready)
+# Build state last updated: 2026-04-08 (Phase 3 complete — EF migrations applied, MassTransit wired, ES indexed)
 
 ---
 
@@ -88,7 +88,7 @@ SDK on machine: .NET 9.0.201 (but projects target net5.0)
 | Elasticsearch 7.17 | docker-compose — elasticsearch:7.17.21, port 9200 |
 | Kibana 7.17 | docker-compose — kibana:7.17.21, port 5601 |
 | Redis (session cache) | NOT ADDED |
-| NGINX Ingress | NOT ADDED |
+| NGINX Ingress | NOT ADDED (Phase 4) |
 
 ---
 
@@ -466,11 +466,21 @@ kubectl get pods -n skillfind -w
   - Design-time DbContext factories for all 3 DB services
   - Serilog config section added to all 6 appsettings.json files
   - ApiGateway.csproj: ocelot.json marked as publish content
-  - Next step: `docker-compose up -d --build`, then apply migrations with `dotnet ef database update`
+- [x] Phase 3 — Wire Services Together (2026-04-08)
+  - Added CompanyName to Job_Posting entity + CreateJobPostingCommand + migration AddCompanyName
+  - EF migrations applied to all 3 PostgreSQL databases (localhost:5432)
+  - MassTransit + Notification.Domain added to JobPosting.Application
+  - MassTransit RabbitMQ publisher registered in JobPosting.API Program.cs
+  - CreateJobPostingCommandHandler now publishes JobPostCreatedEvent on every job creation
+  - JobPostCreatedConsumer in Notification.Service logs new postings ✅
+  - JobPostCreatedIndexConsumer in Search.Service indexes to Elasticsearch ✅
+  - Elasticsearch index 'skillfind-jobs' created on Search.Service startup
+  - JobPosting Dockerfile updated to include Notification.Domain source
+  - Ocelot routes verified — all 5 routes match docker-compose service names/ports
+  - docker-compose.yml: removed deprecated `version: '3.8'` header
+  - Smoke tests available: POST /api/v1/jobposting → event → Notification logs + ES index
 
 ## REMAINING PHASES
-- [ ] Phase 3 — Wire Services Together
-- [ ] Phase 3 — Wire Services Together
 - [ ] Phase 4 — Kubernetes Manifests
 - [ ] Phase 5 — GitHub Actions CI/CD
 - [ ] Phase 6 — GitHub Pages Demo

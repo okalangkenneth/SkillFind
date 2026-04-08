@@ -74,6 +74,20 @@ try
     app.UseRouting();
     app.UseAuthorization();
     app.MapControllers();
+
+    // Ensure the jobs index exists with correct mapping
+    var elasticClient = app.Services.GetRequiredService<IElasticClient>();
+    var indexExists = await elasticClient.Indices.ExistsAsync("skillfind-jobs");
+    if (!indexExists.Exists)
+    {
+        await elasticClient.Indices.CreateAsync("skillfind-jobs", c => c
+            .Map<JobPostDocument>(m => m.AutoMap())
+            .Settings(s => s
+                .NumberOfShards(1)
+                .NumberOfReplicas(0)));
+        Log.Information("Created Elasticsearch index 'skillfind-jobs'");
+    }
+
     app.Run();
 }
 catch (Exception ex)
