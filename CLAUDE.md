@@ -2,7 +2,7 @@
 # Job portal microservices platform — rehabilitation project
 # Location: E:\Projects\inherited\SkillFind
 # Repo: https://github.com/okalangkenneth/SkillFind
-# Build state last updated: 2026-04-09 (Phase 5 COMPLETE — CI/CD via GitHub Actions, images pushed to GHCR)
+# Build state last updated: 2026-04-09 (Phase 6 COMPLETE — GitHub Pages demo live at https://okalangkenneth.github.io/SkillFind/)
 
 ---
 
@@ -481,6 +481,13 @@ kubectl get pods -n skillfind -w
   - Smoke tests available: POST /api/v1/jobposting → event → Notification logs + ES index
 - [x] Phase 4 — Kubernetes Manifests (2026-04-08)
 - [x] Phase 5 — GitHub Actions CI/CD (2026-04-09)
+- [x] Phase 6 — GitHub Pages Demo (2026-04-09)
+  - docs/index.html: self-contained Leaflet.js demo, CartoDB Dark Matter tiles
+  - 20 mock job pins across Stockholm, Gothenburg, Malmö, Uppsala
+  - Live search filter + category chips, fly-to on pin/card click
+  - Stack badge strip: .NET 8, Kubernetes, Docker, RabbitMQ, Elasticsearch, Ocelot, PostgreSQL, GHCR
+  - docs/.nojekyll: skips Jekyll processing on GitHub Pages
+  - Demo URL: https://okalangkenneth.github.io/SkillFind/ (enable in repo Settings → Pages → main /docs)
   - .github/workflows/ci.yml: restore + build + test on push/PR to main (dotnet test with continue-on-error until test projects added)
   - .github/workflows/cd.yml: build + push 6 images to GHCR on merge to main; tagged with 8-char git SHA + latest
   - k8s deployment YAMLs updated: image refs changed from localhost:5555 to ghcr.io/okalangkenneth; imagePullPolicy → Always
@@ -539,5 +546,4 @@ kubectl get ingress -n skillfind
 ```
 
 ## REMAINING PHASES
-- [ ] Phase 6 — GitHub Pages Demo
 - [ ] Phase 7 — README + LinkedIn Post

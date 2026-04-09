@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillFind — Job Portal Microservices Demo</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1c2330;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent2: #3fb950;
+      --accent3: #f78166;
+      --accent4: #d2a8ff;
+      --tag-bg: #1f2937;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 56px 1fr;
+      grid-template-columns: 380px 1fr;
+      grid-template-areas:
+        "header header"
+        "sidebar map";
+    }
+
+    /* ── Header ── */
+    header {
+      grid-area: header;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 16px;
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+    }
+
+    .logo span { color: var(--text); }
+
+    .tagline {
+      font-size: 12px;
+      color: var(--text-muted);
+      border-left: 1px solid var(--border);
+      padding-left: 16px;
+    }
+
+    .header-links {
+      margin-left: auto;
+      display: flex;
+      gap: 12px;
+    }
+
+    .header-links a {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+
+    .header-links a:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      grid-area: sidebar;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .search-box {
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .search-box input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .search-box input:focus { border-color: var(--accent); }
+    .search-box input::placeholder { color: var(--text-muted); }
+
+    .filters {
+      padding: 10px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chip {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--tag-bg);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .chip.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .results-header {
+      padding: 10px 14px 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    #job-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: 0 8px 8px;
+    }
+
+    .job-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .job-card:hover, .job-card.active {
+      border-color: var(--accent);
+    }
+
+    .job-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .job-company {
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .job-meta {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--tag-bg);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .tag.category { color: var(--accent4); border-color: var(--accent4); }
+    .tag.location { color: var(--accent2); border-color: var(--accent2); }
+    .tag.level { color: var(--accent3); border-color: var(--accent3); }
+
+    /* ── Map ── */
+    #map {
+      grid-area: map;
+    }
+
+    /* ── Stack badge strip ── */
+    .stack-strip {
+      position: absolute;
+      bottom: 24px;
+      right: 16px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: flex-end;
+    }
+
+    .stack-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stack-badges {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      color: #fff;
+    }
+
+    .b-net    { background: #512bd4; }
+    .b-k8s    { background: #326ce5; }
+    .b-docker { background: #2496ed; }
+    .b-rabbit { background: #ff6600; }
+    .b-es     { background: #00bfb3; color: #000; }
+    .b-ocelot { background: #1a1a2e; border: 1px solid #58a6ff; }
+    .b-pg     { background: #336791; }
+    .b-ghcr   { background: #24292f; border: 1px solid #58a6ff; }
+
+    /* custom marker */
+    .job-marker {
+      background: var(--accent);
+      border: 2px solid #fff;
+      border-radius: 50%;
+      width: 12px;
+      height: 12px;
+      box-shadow: 0 0 6px rgba(88,166,255,0.6);
+    }
+
+    .job-marker.active {
+      background: var(--accent3);
+      box-shadow: 0 0 10px rgba(247,129,102,0.8);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Skill<span>Find</span></div>
+  <div class="tagline">Job Portal · Microservices Architecture Demo</div>
+  <div class="header-links">
+    <a href="https://github.com/okalangkenneth/SkillFind" target="_blank">GitHub Repo</a>
+    <a href="https://github.com/okalangkenneth/SkillFind/tree/main/k8s" target="_blank">K8s Manifests</a>
+    <a href="https://github.com/okalangkenneth/SkillFind/actions" target="_blank">CI/CD</a>
+  </div>
+</header>
+
+<div id="sidebar">
+  <div class="search-box">
+    <input type="text" id="search-input" placeholder="Search jobs, companies, skills…" />
+  </div>
+  <div class="filters" id="category-filters">
+    <span class="chip active" data-cat="all">All</span>
+  </div>
+  <div class="results-header" id="results-count">Loading…</div>
+  <div id="job-list"></div>
+</div>
+
+<div id="map"></div>
+
+<script>
+// ── Job data ──────────────────────────────────────────────────────────────────
+const JOBS = [
+  { id:1,  title:"Senior .NET Developer",        company:"TechCorp AB",        category:"Software",    location:"Stockholm",  lat:59.334, lng:18.063, level:"Senior",  salary:"75,000 SEK" },
+  { id:2,  title:"Cloud Infrastructure Engineer",company:"Ericsson",           category:"DevOps",      location:"Stockholm",  lat:59.340, lng:18.048, level:"Senior",  salary:"80,000 SEK" },
+  { id:3,  title:"Backend Developer (.NET 8)",    company:"Spotify",           category:"Software",    location:"Stockholm",  lat:59.330, lng:18.059, level:"Mid",     salary:"65,000 SEK" },
+  { id:4,  title:"Kubernetes Platform Engineer",  company:"King",              category:"DevOps",      location:"Stockholm",  lat:59.336, lng:18.072, level:"Senior",  salary:"85,000 SEK" },
+  { id:5,  title:"Data Engineer",                 company:"H&M Group",         category:"Data",        location:"Stockholm",  lat:59.328, lng:18.055, level:"Mid",     salary:"60,000 SEK" },
+  { id:6,  title:"Frontend Developer (React)",    company:"Klarna",            category:"Software",    location:"Stockholm",  lat:59.342, lng:18.067, level:"Mid",     salary:"62,000 SEK" },
+  { id:7,  title:"Machine Learning Engineer",     company:"Volvo Cars",        category:"AI/ML",       location:"Gothenburg", lat:57.707, lng:11.967, level:"Senior",  salary:"78,000 SEK" },
+  { id:8,  title:"Embedded Systems Developer",    company:"Volvo Group",       category:"Software",    location:"Gothenburg", lat:57.711, lng:11.974, level:"Senior",  salary:"72,000 SEK" },
+  { id:9,  title:"DevOps Engineer",               company:"AstraZeneca",       category:"DevOps",      location:"Gothenburg", lat:57.700, lng:11.961, level:"Mid",     salary:"66,000 SEK" },
+  { id:10, title:"Full Stack Developer",          company:"Chalmers Ventures", category:"Software",    location:"Gothenburg", lat:57.697, lng:11.979, level:"Junior",  salary:"48,000 SEK" },
+  { id:11, title:"Data Scientist",                company:"IKEA",              category:"Data",        location:"Malmö",      lat:55.605, lng:13.000, level:"Mid",     salary:"58,000 SEK" },
+  { id:12, title:".NET Architect",               company:"Axis Communications",category:"Software",    location:"Malmö",      lat:55.611, lng:13.012, level:"Lead",    salary:"92,000 SEK" },
+  { id:13, title:"Site Reliability Engineer",     company:"Thermo Fisher",     category:"DevOps",      location:"Uppsala",    lat:59.858, lng:17.645, level:"Senior",  salary:"74,000 SEK" },
+  { id:14, title:"AI Platform Engineer",          company:"Uppsala University", category:"AI/ML",      location:"Uppsala",    lat:59.852, lng:17.630, level:"Mid",     salary:"56,000 SEK" },
+  { id:15, title:"Software Developer",            company:"Sandvik",           category:"Software",    location:"Stockholm",  lat:59.337, lng:18.060, level:"Mid",     salary:"60,000 SEK" },
+  { id:16, title:"Cloud Architect",               company:"Microsoft Sweden",  category:"DevOps",      location:"Stockholm",  lat:59.333, lng:18.056, level:"Lead",    salary:"95,000 SEK" },
+  { id:17, title:"NLP Engineer",                  company:"Nuance AB",         category:"AI/ML",       location:"Stockholm",  lat:59.345, lng:18.071, level:"Senior",  salary:"82,000 SEK" },
+  { id:18, title:"Platform Engineer",             company:"Bambora",           category:"DevOps",      location:"Stockholm",  lat:59.327, lng:18.042, level:"Mid",     salary:"68,000 SEK" },
+  { id:19, title:"Business Intelligence Developer",company:"Collector Bank",  category:"Data",        location:"Gothenburg", lat:57.703, lng:11.970, level:"Mid",     salary:"62,000 SEK" },
+  { id:20, title:"Junior .NET Developer",         company:"Sigma IT",          category:"Software",    location:"Malmö",      lat:55.600, lng:13.005, level:"Junior",  salary:"42,000 SEK" },
+];
+
+// ── Map setup ────────────────────────────────────────────────────────────────
+const map = L.map('map', { zoomControl: true }).setView([59.0, 16.5], 6);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap &copy; CARTO',
+  subdomains: 'abcd',
+  maxZoom: 19
+}).addTo(map);
+
+// ── State ────────────────────────────────────────────────────────────────────
+let activeCategory = 'all';
+let searchTerm = '';
+let activeJobId = null;
+const markers = {};
+
+// ── Categories ───────────────────────────────────────────────────────────────
+const categories = [...new Set(JOBS.map(j => j.category))].sort();
+const filtersEl = document.getElementById('category-filters');
+categories.forEach(cat => {
+  const chip = document.createElement('span');
+  chip.className = 'chip';
+  chip.dataset.cat = cat;
+  chip.textContent = cat;
+  filtersEl.appendChild(chip);
+});
+
+filtersEl.addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  activeCategory = chip.dataset.cat;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  render();
+});
+
+document.getElementById('search-input').addEventListener('input', e => {
+  searchTerm = e.target.value.toLowerCase();
+  render();
+});
+
+// ── Marker icon ──────────────────────────────────────────────────────────────
+function makeIcon(active = false) {
+  return L.divIcon({
+    className: '',
+    html: `<div class="job-marker${active ? ' active' : ''}"></div>`,
+    iconSize: [12, 12],
+    iconAnchor: [6, 6],
+  });
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function render() {
+  const filtered = JOBS.filter(j => {
+    const matchCat = activeCategory === 'all' || j.category === activeCategory;
+    const matchSearch = !searchTerm ||
+      j.title.toLowerCase().includes(searchTerm) ||
+      j.company.toLowerCase().includes(searchTerm) ||
+      j.category.toLowerCase().includes(searchTerm) ||
+      j.location.toLowerCase().includes(searchTerm);
+    return matchCat && matchSearch;
+  });
+
+  // update count
+  document.getElementById('results-count').textContent =
+    `${filtered.length} position${filtered.length !== 1 ? 's' : ''} found`;
+
+  // update cards
+  const list = document.getElementById('job-list');
+  list.innerHTML = '';
+  filtered.forEach(j => {
+    const card = document.createElement('div');
+    card.className = 'job-card' + (j.id === activeJobId ? ' active' : '');
+    card.innerHTML = `
+      <div class="job-title">${j.title}</div>
+      <div class="job-company">${j.company}</div>
+      <div class="job-meta">
+        <span class="tag category">${j.category}</span>
+        <span class="tag location">&#128205; ${j.location}</span>
+        <span class="tag level">${j.level}</span>
+        <span class="tag">${j.salary}</span>
+      </div>`;
+    card.addEventListener('click', () => focusJob(j.id));
+    list.appendChild(card);
+  });
+
+  // update markers — hide non-matching, show matching
+  const filteredIds = new Set(filtered.map(j => j.id));
+  JOBS.forEach(j => {
+    if (!markers[j.id]) {
+      const m = L.marker([j.lat, j.lng], { icon: makeIcon(j.id === activeJobId) })
+        .addTo(map)
+        .bindPopup(`<b>${j.title}</b><br>${j.company}<br><small>${j.location}</small>`);
+      m.on('click', () => focusJob(j.id));
+      markers[j.id] = m;
+    }
+    if (filteredIds.has(j.id)) {
+      markers[j.id].addTo(map);
+      markers[j.id].setIcon(makeIcon(j.id === activeJobId));
+    } else {
+      markers[j.id].remove();
+    }
+  });
+}
+
+function focusJob(id) {
+  activeJobId = id;
+  const job = JOBS.find(j => j.id === id);
+  if (job) map.flyTo([job.lat, job.lng], 12, { duration: 0.8 });
+  render();
+  // open popup
+  if (markers[id]) markers[id].openPopup();
+  // scroll card into view
+  const cards = document.querySelectorAll('.job-card');
+  cards.forEach(c => {
+    if (c.querySelector('.job-title').textContent === job.title) {
+      c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  });
+}
+
+// ── Stack badge strip ────────────────────────────────────────────────────────
+const strip = document.createElement('div');
+strip.className = 'stack-strip';
+strip.innerHTML = `
+  <div class="stack-label">Built with</div>
+  <div class="stack-badges">
+    <span class="badge b-net">.NET 8</span>
+    <span class="badge b-k8s">Kubernetes</span>
+    <span class="badge b-docker">Docker</span>
+    <span class="badge b-rabbit">RabbitMQ</span>
+    <span class="badge b-es">Elasticsearch</span>
+    <span class="badge b-ocelot">Ocelot</span>
+    <span class="badge b-pg">PostgreSQL</span>
+    <span class="badge b-ghcr">GHCR</span>
+  </div>`;
+document.getElementById('map').style.position = 'relative';
+document.getElementById('map').appendChild(strip);
+
+// ── Initial render ───────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
