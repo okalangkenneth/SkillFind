@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: search-service
-        image: localhost:5555/skillfind-search-service:latest
-        imagePullPolicy: IfNotPresent
+        image: ghcr.io/okalangkenneth/skillfind-search-service:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         envFrom:

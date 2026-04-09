@@ -2,7 +2,7 @@
 # Job portal microservices platform — rehabilitation project
 # Location: E:\Projects\inherited\SkillFind
 # Repo: https://github.com/okalangkenneth/SkillFind
-# Build state last updated: 2026-04-08 (Phase 4 COMPLETE — all pods Running via local registry localhost:5555)
+# Build state last updated: 2026-04-09 (Phase 5 COMPLETE — CI/CD via GitHub Actions, images pushed to GHCR)
 
 ---
 
@@ -480,6 +480,12 @@ kubectl get pods -n skillfind -w
   - docker-compose.yml: removed deprecated `version: '3.8'` header
   - Smoke tests available: POST /api/v1/jobposting → event → Notification logs + ES index
 - [x] Phase 4 — Kubernetes Manifests (2026-04-08)
+- [x] Phase 5 — GitHub Actions CI/CD (2026-04-09)
+  - .github/workflows/ci.yml: restore + build + test on push/PR to main (dotnet test with continue-on-error until test projects added)
+  - .github/workflows/cd.yml: build + push 6 images to GHCR on merge to main; tagged with 8-char git SHA + latest
+  - k8s deployment YAMLs updated: image refs changed from localhost:5555 to ghcr.io/okalangkenneth; imagePullPolicy → Always
+  - .github/GHCR-SETUP.md: instructions for making GHCR packages public after first CD run
+  - Solution path: src/af-microservices.sln (CI uses this path, not repo root)
   - 26 YAML files created under k8s/
   - Namespace, Secrets, ConfigMaps (app-config + postgres-init), PVCs (postgres + elasticsearch)
   - Deployments: postgres, rabbitmq, elasticsearch, kibana (infrastructure)
@@ -533,6 +539,5 @@ kubectl get ingress -n skillfind
 ```
 
 ## REMAINING PHASES
-- [ ] Phase 5 — GitHub Actions CI/CD
 - [ ] Phase 6 — GitHub Pages Demo
 - [ ] Phase 7 — README + LinkedIn Post

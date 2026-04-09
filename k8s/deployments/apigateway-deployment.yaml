@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: apigateway
-        image: localhost:5555/skillfind-apigateway:latest
-        imagePullPolicy: IfNotPresent
+        image: ghcr.io/okalangkenneth/skillfind-apigateway:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         envFrom:

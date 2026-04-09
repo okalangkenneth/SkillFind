@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: jobseeker-api
-        image: localhost:5555/skillfind-jobseeker-api:latest
-        imagePullPolicy: IfNotPresent
+        image: ghcr.io/okalangkenneth/skillfind-jobseeker-api:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         envFrom:
