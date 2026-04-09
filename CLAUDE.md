@@ -2,7 +2,7 @@
 # Job portal microservices platform — rehabilitation project
 # Location: E:\Projects\inherited\SkillFind
 # Repo: https://github.com/okalangkenneth/SkillFind
-# Build state last updated: 2026-04-09 (Phase 6 COMPLETE — GitHub Pages demo live at https://okalangkenneth.github.io/SkillFind/)
+# Build state last updated: 2026-04-09 (ALL PHASES COMPLETE — Project complete, demo live, LinkedIn post drafted)
 
 ---
 
@@ -482,6 +482,14 @@ kubectl get pods -n skillfind -w
 - [x] Phase 4 — Kubernetes Manifests (2026-04-08)
 - [x] Phase 5 — GitHub Actions CI/CD (2026-04-09)
 - [x] Phase 6 — GitHub Pages Demo (2026-04-09)
+- [x] Phase 7 — README + LinkedIn Post (2026-04-09)
+  - README.md: full rewrite with ASCII architecture diagram, services table, Ocelot route map
+  - Kubernetes section: object breakdown, 3 key decisions (imagePullPolicy, tcpSocket probes, replicas:1)
+  - Getting Started: docker-compose (ports 5000-5004, 15672, 5601) and kubectl paths
+  - Tech stack table with confirmed versions, CI/CD section with GHCR image table
+  - Observability section: per-service Serilog index patterns, skillfind-jobs ES index
+  - LINKEDIN_POST.md: drafted and ready to publish
+  - Project complete — demo live, LinkedIn post drafted
   - docs/index.html: self-contained Leaflet.js demo, CartoDB Dark Matter tiles
   - 20 mock job pins across Stockholm, Gothenburg, Malmö, Uppsala
   - Live search filter + category chips, fly-to on pin/card click
@@ -546,4 +554,4 @@ kubectl get ingress -n skillfind
 ```
 
 ## REMAINING PHASES
-- [ ] Phase 7 — README + LinkedIn Post
+<!-- All phases complete -->

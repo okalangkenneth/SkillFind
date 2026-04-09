@@ -1,62 +1,280 @@
-# Skill Find
+# SkillFind — Job Portal Microservices Platform
 
-## An end-to-end job portal solution with a modern microservices architecture and CI/CD pipeline
+[![CI](https://github.com/okalangkenneth/SkillFind/actions/workflows/ci.yml/badge.svg)](https://github.com/okalangkenneth/SkillFind/actions/workflows/ci.yml)
+[![CD](https://github.com/okalangkenneth/SkillFind/actions/workflows/cd.yml/badge.svg)](https://github.com/okalangkenneth/SkillFind/actions/workflows/cd.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Table of Contents:
+**[Live Demo](https://okalangkenneth.github.io/SkillFind/)** · **[Architecture](#architecture)** · **[Kubernetes](#kubernetes)** · **[Getting Started](#getting-started)**
 
-1. [Introduction](#introduction)
-    
-    - [Objectives](#objectives)
-    - [Key Features](#key-features)
-2. [Architecture and design](#architecture-and-design)
-3. [Technologies Used](#technologies)
+An end-to-end job portal platform built with a production-grade microservices architecture.
+Inherited as a single half-finished service; rehabilitated, extended, and deployed with
+full Kubernetes orchestration, a CI/CD pipeline, and an ELK observability stack.
 
-## Introduction.
+---
 
-### Objectives.
-The main objective of the project is to simplify the job search process by allowing users to search and apply for jobs online, and for employers to post job openings and manage applications in a centralized location. Additionally, the project aims to leverage the latest technologies and best practices in software development to ensure the security, scalability, and maintainability of the application.
+## Architecture
 
-### Key Features:
+```
+                          ┌─────────────────────────────────────────────┐
+                          │              Kubernetes Cluster              │
+                          │                 (skillfind ns)               │
+                          │                                              │
+ Browser / Client         │   ┌──────────┐     ┌──────────────────────┐ │
+       │                  │   │  NGINX   │     │     API Gateway      │ │
+       │ :80 / :30000 ────┼──▶│ Ingress  │────▶│  (Ocelot — routes   │ │
+                          │   └──────────┘     │  by path prefix)     │ │
+                          │                    └──────────────────────┘ │
+                          │                              │               │
+                          │          ┌───────────────────┼──────────┐    │
+                          │          ▼           ▼        ▼          ▼    │
+                          │   ┌──────────┐ ┌────────┐ ┌────────┐ ┌──────┐│
+                          │   │JobPosting│ │  Job   │ │  Job   │ │Search││
+                          │   │   API    │ │Category│ │Seeker  │ │  Svc ││
+                          │   └────┬─────┘ └────────┘ └────────┘ └──┬───┘│
+                          │        │                                  │    │
+                          │        ▼ publish event                    │    │
+                          │   ┌─────────┐   ┌──────────────────┐     │    │
+                          │   │RabbitMQ │──▶│  Notification    │     │    │
+                          │   └─────────┘   │    Service       │     │    │
+                          │        │        └──────────────────┘     │    │
+                          │        └──────────────────────────────────┘    │
+                          │                         ▼ index documents       │
+                          │                  ┌─────────────┐               │
+                          │                  │Elasticsearch│               │
+                          │                  │(skillfind-  │               │
+                          │                  │  jobs idx)  │               │
+                          │                  └─────────────┘               │
+                          │                         │                       │
+                          │                  ┌─────────────┐               │
+                          │                  │   Kibana    │               │
+                          │                  │  (logs UI)  │               │
+                          │                  └─────────────┘               │
+                          │                                                │
+                          │   ┌───────────────────────────────┐           │
+                          │   │         PostgreSQL             │           │
+                          │   │  jobposting / jobcategory /   │           │
+                          │   │        jobseeker DBs           │           │
+                          │   └───────────────────────────────┘           │
+                          └─────────────────────────────────────────────────┘
+```
 
-- User-friendly interface for job seekers and employers
-- Real-time job notifications and alerts
-- Advanced job search capabilities with filtering and sorting options
-- Identity and access management using IdentityServer4
-- API gateway using Ocelot
-- Message queueing using RabbitMQ and MassTransit
-- Scalability using Kubernetes and Docker containerization
-- Centralized logging using Elasticsearch, Logstash, and Kibana (ELK stack)
-- CI/CD pipeline using GitHub Actions
+### Services
 
-Our application is designed to be highly scalable and modular, with a microservices architecture that enables seamless integration of new features and services. We have implemented Domain-Driven Design (DDD) and Command-Query Responsibility Segregation (CQRS) patterns to achieve loose coupling between services and maintain high system availability.
+| Service | Responsibility | Tech |
+|---------|---------------|------|
+| **JobPosting.API** | Job post CRUD, publishes `JobPostCreatedEvent` | .NET 8, MediatR, MassTransit, EF Core, PostgreSQL |
+| **JobCategory.API** | Category management | .NET 8, MediatR, EF Core, PostgreSQL |
+| **JobSeeker.API** | User registration, profiles, auth | .NET 8, OpenIddict, ASP.NET Identity, PostgreSQL |
+| **Notification.Service** | Consumes events, sends alerts | .NET 8 Worker, MassTransit, RabbitMQ |
+| **Search.Service** | Full-text job search, indexes to `skillfind-jobs` | .NET 8, NEST 7.17, Elasticsearch, MassTransit |
+| **ApiGateway** | Single entry point, path-based routing | .NET 8, Ocelot |
 
-## Architecture and Design.
+### Ocelot Route Map
 
-![image](https://user-images.githubusercontent.com/68539411/223212580-1beef704-b842-42f2-baf9-c56c318ec17f.png)
+| Upstream path (client) | Downstream service | Port |
+|------------------------|-------------------|------|
+| `/api/jobs/{everything}` | `jobposting-api` | 8080 |
+| `/api/categories/{everything}` | `jobcategory-api` | 8080 |
+| `/api/jobseekers/{everything}` | `jobseeker-api` | 8080 |
+| `/api/search/{everything}` | `search-service` | 8080 |
+| `/connect/{everything}` | `jobseeker-api` (OpenIddict) | 8080 |
 
+---
 
+## Kubernetes
 
-Our job portal application is built using a microservices architecture, which enables us to build and deploy individual services independently, making it easier to maintain and scale our system. Our microservices are designed to be loosely coupled and communicate with each other through APIs using asynchronous messaging. We have implemented the following core services:
+The Kubernetes layer is what differentiates this project from a standard docker-compose
+deployment. Every service runs in the `skillfind` namespace with production-grade configuration.
 
-#### Job Seeker Service:
-The Job Seeker Service handles user authentication and authorization, as well as managing user profiles and preferences. It uses IdentityServer4 for identity management and implements REST APIs for communication with other services.
+### Object breakdown
 
-#### Job Posting Service:
-The Job Posting Service manages job postings submitted by employers. It exposes REST APIs for job posting creation, retrieval, and search.
+| Object | Purpose |
+|--------|---------|
+| `Namespace` | Logical isolation — all resources scoped to `skillfind` |
+| `Secret` | Base64-encoded credentials (postgres, rabbitmq, connection strings) |
+| `ConfigMap` | Non-sensitive shared config injected as env vars |
+| `PersistentVolumeClaim` | Durable storage for PostgreSQL and Elasticsearch |
+| `Deployment` | Desired-state declaration — Kubernetes self-heals toward this |
+| `Service (ClusterIP)` | Stable internal DNS for inter-service communication |
+| `Service (NodePort 30000)` | External access on port 30000 for local testing (apigateway) |
+| `Ingress (NGINX)` | Path-based routing to services from a single entry point |
 
-#### Job Category Service:
-The Job Category Service manages job categories and implements REST APIs for category creation, retrieval, and search.
+### Key decisions
 
-#### Notification Service:
-The Notification Service sends real-time notifications to job seekers based on their preferences and job availability. It uses RabbitMQ and MassTransit for message queueing and implements REST APIs for communication with other services.
+**`imagePullPolicy: Always` with GHCR** — deployments pull `ghcr.io/okalangkenneth/skillfind-*:latest`
+on every pod start, so the cluster always runs the image built by the latest CD run.
+During local development a `registry:2` container on port 5555 bridges Docker Desktop's
+build daemon and containerd runtime; that phase used `imagePullPolicy: IfNotPresent`.
 
-#### API Gateway:
-The API Gateway acts as a single entry point for all external requests to our microservices. It is built using Ocelot and implements REST APIs for communication with our microservices.
+**TCP socket probes for the Ocelot gateway** — Ocelot intercepts every HTTP path including
+`/healthz` and returns 404 when no downstream route matches, which causes HTTP liveness
+probes to restart the pod in a loop. TCP socket probes bypass HTTP routing entirely and
+only verify the port accepts connections.
 
-#### Search Service:
-The Search Service provides advanced job search capabilities with filtering and sorting options based on job category, location, experience, and more. It is built using Elasticsearch and implements REST APIs for search functionality.
+**`replicas: 1` on a single-node cluster** — Docker Desktop provides one node with a
+shared CPU budget. Running `replicas: 2` across all services exhausts the quota.
+In a multi-node production cluster, `replicas: 2-3` with pod anti-affinity rules
+would be the correct configuration.
 
-#### Logging Service:
-The Logging Service is responsible for collecting and aggregating logs generated by our microservices. It uses Logstash to parse and enrich logs and Kibana for log visualization and analysis.
+### Deploy to local cluster
 
-We use Kubernetes for container orchestration and Docker for containerization of our microservices. We have also implemented Domain-Driven Design (DDD) and Command-Query Responsibility Segregation (CQRS) patterns to achieve loose coupling between services and maintain high system availability.
+```bash
+# Prerequisites: Docker Desktop with Kubernetes enabled, NGINX Ingress Controller installed
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/secrets/
+kubectl apply -f k8s/configmaps/
+kubectl apply -f k8s/pvcs/
+
+# Infrastructure first
+kubectl apply -f k8s/deployments/postgres-deployment.yaml
+kubectl apply -f k8s/deployments/rabbitmq-deployment.yaml
+kubectl apply -f k8s/deployments/elasticsearch-deployment.yaml
+
+# Wait for infrastructure to be ready
+kubectl wait --namespace skillfind --for=condition=ready pod \
+  --selector=app=postgres --timeout=120s
+kubectl wait --namespace skillfind --for=condition=ready pod \
+  --selector=app=rabbitmq --timeout=120s
+
+# Application services
+kubectl apply -f k8s/deployments/
+kubectl apply -f k8s/services/
+kubectl apply -f k8s/ingress/
+
+# Verify
+kubectl get pods -n skillfind
+curl http://localhost:30000/api/categories
+```
+
+---
+
+## Getting Started
+
+### Option A — Docker Compose (local dev)
+
+```bash
+git clone https://github.com/okalangkenneth/SkillFind.git
+cd SkillFind
+
+docker compose up -d --build
+```
+
+Wait ~60 seconds for Elasticsearch to become healthy, then apply migrations:
+
+```bash
+dotnet ef database update \
+  --project src/Services/JobPosting/JobPosting.Infrastructure \
+  --startup-project src/Services/JobPosting/JobPosting.API
+
+dotnet ef database update \
+  --project src/Services/JobCategory/JobCategory.Infrastructure \
+  --startup-project src/Services/JobCategory/JobCategory.API
+
+dotnet ef database update \
+  --project src/Services/JobSeeker/JobSeeker.Infrastructure \
+  --startup-project src/Services/JobSeeker/JobSeeker.API
+```
+
+Services available at:
+
+| Service | URL |
+|---------|-----|
+| API Gateway | http://localhost:5000 |
+| JobPosting API | http://localhost:5001 |
+| JobCategory API | http://localhost:5002 |
+| JobSeeker API | http://localhost:5003 |
+| Search Service | http://localhost:5004 |
+| RabbitMQ Management | http://localhost:15672 |
+| Kibana | http://localhost:5601 |
+
+### Option B — Kubernetes (see [Deploy to local cluster](#deploy-to-local-cluster))
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Services | .NET 8 Minimal APIs |
+| ORM | EF Core 8 + Npgsql |
+| CQRS | MediatR 12 |
+| Mapping | Mapster 7 |
+| Auth | OpenIddict 5.4 |
+| Messaging | MassTransit 8 + RabbitMQ 3.13 |
+| Gateway | Ocelot 23 |
+| Search | NEST 7.17 + Elasticsearch 7.17.21 |
+| Database | PostgreSQL 16 |
+| Logging | Serilog + ELK Stack |
+| Containers | Docker + docker-compose |
+| Orchestration | Kubernetes (10 Deployments, NGINX Ingress) |
+| Registry | GitHub Container Registry (GHCR) |
+| CI/CD | GitHub Actions |
+| Demo | GitHub Pages + Leaflet.js |
+
+---
+
+## CI/CD Pipeline
+
+```
+push to main
+     │
+     ├── CI workflow (ubuntu-latest, .NET 8.0.x)
+     │     dotnet restore → dotnet build --configuration Release
+     │     → dotnet test (continue-on-error until test projects added)
+     │
+     └── CD workflow (ubuntu-latest, docker/build-push-action@v5)
+           Build 6 Docker images with GitHub Actions layer cache
+           Push to ghcr.io/okalangkenneth/skillfind-*:<8-char-sha>
+           Push to ghcr.io/okalangkenneth/skillfind-*:latest
+```
+
+Images are tagged with both `latest` and the short git SHA for full traceability.
+The CD workflow uses `GITHUB_TOKEN` — no extra secrets needed.
+
+### GHCR images
+
+| Image | Repository |
+|-------|-----------|
+| jobposting-api | `ghcr.io/okalangkenneth/skillfind-jobposting-api` |
+| jobcategory-api | `ghcr.io/okalangkenneth/skillfind-jobcategory-api` |
+| jobseeker-api | `ghcr.io/okalangkenneth/skillfind-jobseeker-api` |
+| notification-service | `ghcr.io/okalangkenneth/skillfind-notification-service` |
+| search-service | `ghcr.io/okalangkenneth/skillfind-search-service` |
+| apigateway | `ghcr.io/okalangkenneth/skillfind-apigateway` |
+
+---
+
+## Observability
+
+All services write structured JSON logs via Serilog to Elasticsearch.
+
+| Service | Index pattern |
+|---------|--------------|
+| JobPosting.API | `jobposting-logs-{yyyy.MM.dd}` |
+| JobSeeker.API | `jobseeker-logs-{yyyy.MM.dd}` |
+| Notification.Service | `notification-logs-{yyyy.MM.dd}` |
+| Search.Service | `search-logs-{yyyy.MM.dd}` |
+
+Kibana: open http://localhost:5601 → Index Management → use pattern `*-logs-*` with `@timestamp`.
+Recommended columns: `level`, `fields.SourceContext`, `message`.
+
+Job documents are indexed to Elasticsearch index `skillfind-jobs` by `Search.Service`
+via a `JobPostCreatedIndexConsumer` that listens on the MassTransit/RabbitMQ bus.
+
+---
+
+## What I'd Add for Production
+
+- **Horizontal Pod Autoscaler (HPA)** on JobPosting and Search — scale on CPU/RPS
+- **Sealed Secrets or External Secrets Operator** — replace base64 secrets with vault-backed ones
+- **Istio or Linkerd service mesh** — mTLS between services, distributed tracing
+- **Multi-node cluster** — enable `replicas: 2-3` with pod anti-affinity rules
+- **Helm chart** — package all k8s manifests as a versioned, parameterised chart
+- **Integration test project** — end-to-end API tests in the CI pipeline
+- **Rate limiting in Ocelot** — protect the gateway from abuse
+
+---
+
+## License
+
+MIT © [Kenneth Okalang](https://github.com/okalangkenneth)
