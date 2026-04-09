@@ -2,7 +2,7 @@
 # Job portal microservices platform — rehabilitation project
 # Location: E:\Projects\inherited\SkillFind
 # Repo: https://github.com/okalangkenneth/SkillFind
-# Build state last updated: 2026-04-09 (ALL PHASES COMPLETE — Project complete, demo live, LinkedIn post drafted)
+# Build state last updated: 2026-04-09 (Phase 8 COMPLETE — Employer auth, JWT validation, ownership checks)
 
 ---
 
@@ -552,6 +552,23 @@ kubectl get pods -n skillfind
 kubectl get services -n skillfind
 kubectl get ingress -n skillfind
 ```
+
+- [x] Phase 8 — Employer Auth + Job Post Ownership (2026-04-09)
+  - Job_Posting entity: added EmployerId, EmployerEmail (nullable, EF migration), IsOwnedBy() method
+  - ICurrentUserService interface in Application.Interfaces; CurrentUserService impl in API.Services
+  - ForbiddenException added to Application.Exceptions
+  - CreateJobPostingCommandHandler: sets EmployerId/EmployerEmail from ICurrentUserService after Mapster Adapt
+  - UpdateJobPostingCommandHandler + DeleteJobPostingCommandHandler: ownership check before mutation
+  - JobPostingController: [Authorize] on POST/PUT/DELETE; GET stays public
+  - JobPosting.API.csproj: added Microsoft.AspNetCore.Authentication.JwtBearer 8.0.4
+  - JobPosting.API Program.cs: JWT Bearer auth (authority = JobSeeker.API), exception handler middleware, Swagger Bearer UI
+  - appsettings.json: Auth:Authority = http://localhost:5003
+  - docker-compose.yml: Auth__Authority = http://jobseeker-api:8080
+  - k8s/configmaps/app-config.yaml: Auth__Authority = http://jobseeker-api
+  - JobSeeker.Infrastructure: DisableAccessTokenEncryption, AcceptAnonymousClients, RegisterScopes(skillfind-api)
+  - EF migration: 20260409084642_AddEmployerIdToJobPost (EmployerId + EmployerEmail nullable text)
+  - README.md: Authentication Flow section added, "What I'd Add" updated
+  - Build: 0 errors, 0 warnings (all 17 projects)
 
 ## REMAINING PHASES
 <!-- All phases complete -->

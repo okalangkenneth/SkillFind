@@ -3,6 +3,7 @@ using System;
 using JobPosting.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace JobPosting.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(JobPostingContext))]
-    partial class JobPostingContextModelSnapshot : ModelSnapshot
+    [Migration("20260409084642_AddEmployerIdToJobPost")]
+    partial class AddEmployerIdToJobPost
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

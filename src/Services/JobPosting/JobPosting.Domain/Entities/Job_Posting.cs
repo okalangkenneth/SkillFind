@@ -20,9 +20,9 @@ namespace JobPosting.Domain.Entities
         public bool IsRemote { get; set; }
         public bool IsFullTime { get; set; }
         public string ContactEmail { get; set; }
+        public string EmployerId { get; set; } = string.Empty;
+        public string EmployerEmail { get; set; } = string.Empty;
 
-
-
-        
+        public bool IsOwnedBy(string employerId) => EmployerId == employerId;
     }
 }

@@ -3,6 +3,7 @@ using JobPosting.Application.Features.JobPostings.Commands.DeleteJobPosting;
 using JobPosting.Application.Features.JobPostings.Commands.UpdateJobPosting;
 using JobPosting.Application.Features.JobPostings.Queries.GetJobPostingsList;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -22,6 +23,7 @@ namespace JobPosting.API.Controllers
             _mediator = mediator;
         }
 
+        // Public — job seekers browse without logging in
         [HttpGet("{title}", Name = "GetJobPosting")]
         [ProducesResponseType(typeof(IEnumerable<JobPostingsVm>), (int)HttpStatusCode.OK)]
         public async Task<ActionResult<IEnumerable<JobPostingsVm>>> GetJobPostingsByTitle(string title)
@@ -31,6 +33,8 @@ namespace JobPosting.API.Controllers
             return Ok(jobPostings);
         }
 
+        // Write endpoints require an authenticated employer token
+        [Authorize]
         [HttpPost(Name = "CreateJobPosting")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
         public async Task<ActionResult<int>> CreateJobPosting([FromBody] CreateJobPostingCommand command)
@@ -39,6 +43,7 @@ namespace JobPosting.API.Controllers
             return Ok(result);
         }
 
+        [Authorize]
         [HttpPut(Name = "UpdateJobPosting")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -49,6 +54,7 @@ namespace JobPosting.API.Controllers
             return NoContent();
         }
 
+        [Authorize]
         [HttpDelete("{id}", Name = "DeleteJobPosting")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -64,10 +64,28 @@ full Kubernetes orchestration, a CI/CD pipeline, and an ELK observability stack.
 |---------|---------------|------|
 | **JobPosting.API** | Job post CRUD, publishes `JobPostCreatedEvent` | .NET 8, MediatR, MassTransit, EF Core, PostgreSQL |
 | **JobCategory.API** | Category management | .NET 8, MediatR, EF Core, PostgreSQL |
-| **JobSeeker.API** | User registration, profiles, auth | .NET 8, OpenIddict, ASP.NET Identity, PostgreSQL |
+| **JobSeeker.API** | User registration, profiles, auth — issues JWT tokens for employer authentication | .NET 8, OpenIddict, ASP.NET Identity, PostgreSQL |
 | **Notification.Service** | Consumes events, sends alerts | .NET 8 Worker, MassTransit, RabbitMQ |
 | **Search.Service** | Full-text job search, indexes to `skillfind-jobs` | .NET 8, NEST 7.17, Elasticsearch, MassTransit |
 | **ApiGateway** | Single entry point, path-based routing | .NET 8, Ocelot |
+
+### Authentication Flow
+
+```
+Employer registers → POST /api/jobseekers (JobSeeker.API)
+Employer logs in   → POST /connect/token  (OpenIddict password flow)
+                     Returns JWT access token
+
+Employer posts job → POST /api/v1/jobposting
+                     Authorization: Bearer <token>
+                     JobPosting.API validates token against JobSeeker.API discovery endpoint
+                     EmployerId extracted from token sub claim
+                     Stored on Job_Posting entity
+
+Only owner can modify → PUT/DELETE check jobPost.IsOwnedBy(currentUserId)
+                        Returns 403 if token belongs to a different employer
+GET endpoints are public — job seekers browse without logging in
+```
 
 ### Ocelot Route Map
 
@@ -265,6 +283,7 @@ via a `JobPostCreatedIndexConsumer` that listens on the MassTransit/RabbitMQ bus
 
 ## What I'd Add for Production
 
+- **Audience validation** — register JobPosting.API as a resource server in OpenIddict's database so the `aud` claim can be validated in addition to the issuer
 - **Horizontal Pod Autoscaler (HPA)** on JobPosting and Search — scale on CPU/RPS
 - **Sealed Secrets or External Secrets Operator** — replace base64 secrets with vault-backed ones
 - **Istio or Linkerd service mesh** — mTLS between services, distributed tracing

@@ -10,3 +10,4 @@ data:
   RabbitMQ__Host: "rabbitmq"
   RabbitMQ__Username: "skillfind_user"
   RabbitMQ__Password: "skillfind_pass"
+  Auth__Authority: "http://jobseeker-api"
