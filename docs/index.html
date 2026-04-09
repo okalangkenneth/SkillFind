@@ -262,6 +262,134 @@
       background: var(--accent3);
       box-shadow: 0 0 10px rgba(247,129,102,0.8);
     }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-left: 24px;
+    }
+
+    .tab {
+      font-size: 12px;
+      padding: 5px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .tab:hover:not(.active) {
+      color: var(--text);
+      border-color: var(--text-muted);
+    }
+
+    /* ── Auth flow diagram ── */
+    .flow-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--bg);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .flow-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .flow-label {
+      font-size: 11px;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .flow-label span {
+      color: var(--accent);
+      font-family: monospace;
+      font-size: 10px;
+    }
+
+    .flow-arrow {
+      color: var(--text-muted);
+      font-size: 16px;
+      padding: 0 6px;
+    }
+
+    /* ── Post a Job form ── */
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 8px 10px;
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+      resize: vertical;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .submit-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 9px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .submit-btn:hover { opacity: 0.85; }
   </style>
 </head>
 <body>
@@ -269,12 +397,18 @@
 <header>
   <div class="logo">Skill<span>Find</span></div>
   <div class="tagline">Job Portal · Microservices Architecture Demo</div>
+  <nav class="tabs">
+    <button class="tab active" data-tab="browse">Browse Jobs</button>
+    <button class="tab" data-tab="post">Post a Job</button>
+  </nav>
   <div class="header-links">
     <a href="https://github.com/okalangkenneth/SkillFind" target="_blank">GitHub Repo</a>
     <a href="https://github.com/okalangkenneth/SkillFind/tree/main/k8s" target="_blank">K8s Manifests</a>
     <a href="https://github.com/okalangkenneth/SkillFind/actions" target="_blank">CI/CD</a>
   </div>
 </header>
+
+<div id="tab-browse" class="tab-panel" style="display:contents">
 
 <div id="sidebar">
   <div class="search-box">
@@ -288,6 +422,126 @@
 </div>
 
 <div id="map"></div>
+
+</div><!-- /tab-browse -->
+
+<div id="tab-post" class="tab-panel" style="display:none; grid-column:1/-1; overflow-y:auto; padding:40px;">
+
+  <div style="max-width:640px; margin:0 auto;">
+
+    <!-- Auth flow explainer -->
+    <div style="background:var(--surface); border:1px solid var(--border);
+                border-radius:12px; padding:24px; margin-bottom:28px;">
+      <div style="font-size:13px; font-weight:600; color:var(--text);
+                  margin-bottom:16px;">How employer authentication works</div>
+      <div style="display:flex; align-items:center; gap:0; flex-wrap:wrap; gap:6px;">
+        <div class="flow-step">
+          <div class="flow-icon">1</div>
+          <div class="flow-label">Register employer account<br><span>POST /api/jobseekers</span></div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-icon">2</div>
+          <div class="flow-label">Login via OpenIddict<br><span>POST /connect/token</span></div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-icon">3</div>
+          <div class="flow-label">Receive JWT token<br><span>sub = employerId</span></div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="flow-icon">4</div>
+          <div class="flow-label">Post job with Bearer token<br><span>EmployerId stamped on post</span></div>
+        </div>
+      </div>
+      <div style="margin-top:14px; padding:10px 14px; background:var(--bg);
+                  border-radius:6px; border-left:3px solid var(--accent);
+                  font-size:11px; color:var(--text-muted); font-family:monospace; line-height:1.7;">
+        Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...<br>
+        → JobPosting.API validates against JobSeeker.API public key<br>
+        → EmployerId extracted from <strong style="color:var(--accent)">sub</strong> claim<br>
+        → Only owner can PUT / DELETE their posts → 403 Forbidden otherwise
+      </div>
+    </div>
+
+    <!-- Demo form -->
+    <div style="background:var(--surface); border:1px solid var(--border);
+                border-radius:12px; padding:24px;">
+      <div style="font-size:13px; font-weight:600; color:var(--text); margin-bottom:6px;">
+        Post a Job
+      </div>
+      <div style="font-size:11px; color:var(--text-muted); margin-bottom:20px;">
+        Requires employer authentication · Demo form (not connected to live backend)
+      </div>
+
+      <div class="form-group">
+        <label>Job Title</label>
+        <input type="text" placeholder="e.g. Senior .NET Developer" value="Senior .NET Developer" />
+      </div>
+      <div class="form-group">
+        <label>Company Name</label>
+        <input type="text" placeholder="Your company" value="TechCorp AB" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" placeholder="City" value="Stockholm" />
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select>
+            <option>Software</option>
+            <option>DevOps</option>
+            <option>Data</option>
+            <option>AI/ML</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Experience Level</label>
+          <select>
+            <option>Junior</option>
+            <option selected>Mid</option>
+            <option>Senior</option>
+            <option>Lead</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Monthly Salary (SEK)</label>
+          <input type="number" placeholder="65000" value="65000" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Job Description</label>
+        <textarea rows="4" placeholder="Describe the role...">We are looking for an experienced .NET developer to join our growing platform team.
+You will work with microservices, Kubernetes, and event-driven architecture.</textarea>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:12px; margin-top:4px;">
+        <button class="submit-btn" onclick="handleDemoSubmit()">Post Job (Demo)</button>
+        <div style="font-size:11px; color:var(--text-muted);">
+          &#128274; Requires valid JWT in Authorization header
+        </div>
+      </div>
+
+      <div id="submit-result" style="display:none; margin-top:16px; padding:12px 16px;
+           border-radius:8px; font-size:12px; font-family:monospace; line-height:1.7;"></div>
+    </div>
+
+    <!-- Tech used -->
+    <div style="margin-top:20px; display:flex; gap:8px; flex-wrap:wrap;">
+      <span class="badge b-net">.NET 8</span>
+      <span class="badge b-k8s" style="background:#7c3aed;">OpenIddict 5.4</span>
+      <span class="badge b-docker">JWT Bearer</span>
+      <span class="badge b-rabbit">MassTransit</span>
+      <span class="badge b-es">Elasticsearch</span>
+      <span class="badge b-pg">PostgreSQL</span>
+    </div>
+
+  </div>
+</div><!-- /tab-post -->
 
 <script>
 // ── Job data ──────────────────────────────────────────────────────────────────
@@ -454,6 +708,42 @@ document.getElementById('map').appendChild(strip);
 
 // ── Initial render ───────────────────────────────────────────────────────────
 render();
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.tab;
+    document.getElementById('tab-browse').style.display =
+      target === 'browse' ? 'contents' : 'none';
+    document.getElementById('tab-post').style.display =
+      target === 'post' ? 'block' : 'none';
+    if (target === 'browse') map.invalidateSize();
+  });
+});
+
+// ── Demo submit ───────────────────────────────────────────────────────────────
+function handleDemoSubmit() {
+  const result = document.getElementById('submit-result');
+  result.style.display = 'block';
+  result.style.background = 'rgba(88,166,255,0.08)';
+  result.style.borderLeft = '3px solid var(--accent)';
+  result.innerHTML = `
+<strong style="color:var(--accent)">Demo mode — what would happen with a live backend:</strong><br><br>
+POST /api/v1/jobposting<br>
+Authorization: Bearer &lt;your-jwt-token&gt;<br>
+Content-Type: application/json<br><br>
+→ JobPosting.API validates Bearer token against JobSeeker.API<br>
+→ EmployerId extracted from JWT <strong style="color:var(--accent)">sub</strong> claim<br>
+→ Job post created in PostgreSQL with EmployerId stamped<br>
+→ JobPostCreatedEvent published to RabbitMQ<br>
+→ Notification.Service logs alert<br>
+→ Search.Service indexes document in Elasticsearch<br>
+→ Job appears in search results within ~1 second<br><br>
+<strong style="color:var(--accent2)">201 Created ✓</strong>
+  `;
+}
 </script>
 </body>
 </html>
